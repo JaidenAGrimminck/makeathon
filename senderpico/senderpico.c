@@ -10,6 +10,12 @@ int* constructOut(int values[]) {
     }
     return out;
 }
+void printLines(int val){
+    for(int i = 0; i*5<val;i++){
+        printf("=");
+    }
+    printf("\n");
+}
 
 #define THUMB_PIN 26
 #define INDEX_PIN 27
@@ -36,7 +42,8 @@ int main()
 
         adc_select_input(0);
         values[0] = (int)adc_read();
-        printf("%u",adc_read());
+        //printf("%u\n",adc_read());
+        printLines(values[0]);
 
         // adc_select_input(1);
         // values[1] = (int)adc_read();
@@ -66,6 +73,6 @@ int main()
 
         // free(out);
 
-        sleep_ms(1000);
+        sleep_ms(10);
     }
 }
