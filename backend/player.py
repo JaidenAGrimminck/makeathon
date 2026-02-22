@@ -7,8 +7,7 @@ SAMPLES_ROOT = Path("Drum").expanduser()
 
 lib = DrumSampleLibrary(SAMPLES_ROOT, seed=42)
 
-
-class Player:
+class DrumPlayer:
     def __init__(self, sound_master):
         self.sm = sound_master
 

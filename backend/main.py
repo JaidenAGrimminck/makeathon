@@ -2,14 +2,19 @@ import wss
 import asyncio
 import glove
 import uart
-import player
+import player as drum_player
+import pplayer as piano_player
 import sound_master
 
 sm = sound_master.SoundMaster()
 server = wss.Server()
 # gloveL = glove.Glove(glove.Side.LEFT)
 gloveR = glove.Glove(glove.Side.RIGHT)
-player = player.Player(sm)
+
+drum_player = drum_player.DrumPlayer(sm)
+piano_player = piano_player.PianoPlayer(sm)
+
+
 uart = uart.UART('/dev/ttyUSB0')
 
 def handle_uart_data(data):
@@ -61,10 +66,16 @@ async def on_msg(msg, ws):
             gloveR.tap('pinky')
 
 async def main():
-    gloveR.on_tap('thumb', lambda: player.play('kick'))
-    gloveR.on_tap('index', lambda: player.play('snare'))
-    gloveR.on_tap('middle', lambda: player.play('hat'))
-    gloveR.on_tap('ring', lambda: player.play('tom'))
+    gloveR.on_tap('thumb', lambda: drum_player.play('kick'))
+    gloveR.on_tap('index', lambda: drum_player.play('snare'))
+    gloveR.on_tap('middle', lambda: drum_player.play('hat'))
+    gloveR.on_tap('ring', lambda: drum_player.play('tom'))
+
+    gloveR.on_tap('thumb', lambda: piano_player.play_note('C4', vel=0.8, dur_beats=0.01, gain=0.4))
+    gloveR.on_tap('index', lambda: piano_player.play_note('E4', vel=0.8, dur_beats=0.01, gain=0.4))
+    gloveR.on_tap('middle', lambda: piano_player.play_note('G4', vel=0.8, dur_beats=0.01, gain=0.4))
+    gloveR.on_tap('ring', lambda: piano_player.play_note('B4', vel=0.8, dur_beats=0.01, gain=0.4))
+    gloveR.on_tap('pinky', lambda: piano_player.play_note('C5', vel=0.8, dur_beats=0.01, gain=0.4))
 
     uart.onData(handle_uart_data)
     server.onMessage(on_msg)
