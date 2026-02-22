@@ -60,7 +60,7 @@ class IMU:
         self.roll = roll
 
     def parse(self, data):
-        if (len(data) != 12):
+        if (len(data) < 12):
             return
 
         button_state = data[-1] # last byte is button state

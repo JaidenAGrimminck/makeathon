@@ -51,6 +51,8 @@ async def handle_uart(data):
 
     byte_arr.append(button_state) # append button state as last byte
 
+    # print(button_state)
+
     # broadcast data
     for ws in connected_clients:
         try:

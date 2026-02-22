@@ -64,13 +64,13 @@ async def handle_uart(data, side, ws=None):
     nvals = text.split('Values: ')[-1].split(',') # get the part after "Values: " and split by comma
     nvals = [trim(n) for n in nvals] # trim spaces from each value
     if int(side) == 0:
-        values[0] = int(nvals[0]) # thumb
+        #values[0] = int(nvals[0]) # thumb
         values[1] = int(nvals[1]) # index
         values[2] = int(nvals[2]) # middle
     else:
         values[3] = int(nvals[0]) # ring
         values[4] = int(nvals[1]) # pinky
-        values[5] = int(nvals[2]) # extra
+        values[0] = int(nvals[2]) # extra
         # values[3] = int(0) # ring
         # values[4] = int(0) # pinky
         # values[5] = int(0) # extra

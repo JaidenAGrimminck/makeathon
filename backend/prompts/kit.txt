@@ -13,15 +13,21 @@ Below, you need to analyze the hits and suggest improvements to make the loops s
 Then, finally, provide a refined version of the loops with improved timing and rhythm.
 The refined version should be in the following format:
 ```
-<refined_loops>
-    <loop>
-        <instrument>Instrument Name</instrument>
+<refined_loop>
+    <note>
+        <name>Note/Instrument Name</name>
         <hits>
             <timestamp>[timestamp of the hit]</timestamp>
+            <timestamp>[timestamp 2 of the hit]</timestamp>
+                ...
         </hits>
-    </loop>
+    </note>
     ...
-</refined_loops>
+</refined_loop>
 ```
 
+ABSOLUTELY PRESERVE THE NOTE/INSTRUMENT NAMES. THEY ARE USED IN THE CODE TO TRIGGER THE SOUNDS, SO THEY MUST BE EXACTLY THE SAME. ONLY ADJUST THE TIMING OF THE TIMESTAMPS TO IMPROVE THE RHYTHM AND CONSISTENCY OF THE LOOPS.
+FEEL FREE TO ADD OR REMOVE HITS TO IMPROVE THE RHYTHM AND CONSISTENCY OF THE LOOPS, BUT ONLY IF YOU THINK IT WILL IMPROVE THE SOUND.
+
 DO NOT include any instrument names or timestamps that were not in the original hits. Only adjust the timing of the existing hits to improve the rhythm and consistency of the loops.
+Spice it up and make it sound better! Go for a $$VIBE$$ vibe! Again, do not make new notes/instruments. You can make new timestamps for the existing notes/instruments, but do not add new notes/instruments that were not in the original hits.

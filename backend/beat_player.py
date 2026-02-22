@@ -110,7 +110,7 @@ def play_voice(
     sound_master: Optional["SoundMaster"] = None,
     sr: int = 44100,
     *,
-    gain: float = 1.1,
+    gain: float = 2,
     duration: Optional[float] = None,   # seconds; None = play full sample
     start_in: float = 0.0,              # seconds from now (only used with sound_master)
     fade_in: float = 0.005,

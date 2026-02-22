@@ -4,6 +4,9 @@ import copy
 import threading
 import math
 import struct
+import re
+import voice
+import random
 
 from sound_master import SoundMaster
 
@@ -14,11 +17,16 @@ class Settings:
         self.modulation = 0
         self.volume = 0
         self.beats_per_loop = 8
+        self.notify_ai = False
+        self.notify_reset = False
+        self.waiting_for_ai = False
         # todo eventually: live settings etc but dw for now
 
 class Looper:
     def __init__(self, sm: "SoundMaster"):
         self.sm = sm
+
+        self.gemini_client = voice.Voice()
 
         self.loops = {} # under each index corresponding to , list of (time, action_num) tuples, sorted by time
 
@@ -42,6 +50,18 @@ class Looper:
 
         self.settings = Settings()
 
+    def add_action_description(self, description_list=None):
+        if (description_list is None):
+            return
+        
+        if (len(description_list) != 5):
+            return
+        
+        self.topic_descriptions.append(description_list)
+
+    def reset_loop(self, active):
+        if active in self.loops:
+            del self.loops[active]
 
     def onBeat(self, callback):
         self.beat_callbacks.append(callback)
@@ -113,6 +133,10 @@ class Looper:
 
     def set_looping(self, looping):
         self.looping = looping
+
+    def next_instrument(self):
+        self.active = (self.active + 1) % len(self.actions)
+        print(f"Switched to instrument {self.active}")
 
     async def start_loop(self, loop_index=0):        
         self.looping = True
@@ -199,5 +223,131 @@ class Looper:
 
         volume_byte = int((self.settings.volume + 1) / 2 * 255) # convert volume from [-1, 1] to [0, 255]
         state.append(volume_byte)
+        state.append(1 if self.settings.notify_ai else 0) # notify AI switch
+        state.append(1 if self.settings.notify_reset else 0) # notify reset
+        state.append(1 if self.settings.waiting_for_ai else 0) # waiting for AI response
 
         return state
+    
+
+    async def ai_refine_loop(self):
+        """Send the active loop to Gemini for refinement and replace it with the response."""
+        if self.active == -1:
+            print("No active loop to refine.")
+            return False
+        
+        self.active -= 1 
+        if self.active < 0:
+            self.active = len(self.actions) - 1
+
+        prompt = self.convert_active_to_ai_readable()
+        if not prompt:
+            print("No prompt generated for AI refinement.")
+            return False
+
+        print(f"Sending loop to AI for refinement:\n------\n{prompt}\n------")
+
+        pre_active = int(self.active) + 1 - 1
+        self.settings.waiting_for_ai = True # set flag to indicate waiting for AI response
+
+        try:
+            # run the blocking Gemini call off the event loop
+            response = await asyncio.to_thread(self.gemini_client.ask, prompt)
+        except Exception as exc:
+            print(f"AI refinement failed: {exc}")
+            self.settings.waiting_for_ai = False # reset flag if AI refinement fails
+            return False
+        
+        self.settings.waiting_for_ai = False # reset flag after receiving AI response
+
+        if not response:
+            print("AI returned an empty response.")
+            return False
+
+        if not self.convert_from_ai(response, pre_active):
+            print("AI response could not be parsed into a loop.")
+            return False
+
+        # notify any subscribers that state changed
+        for cb in self.update_callbacks:
+            cb(self.get_state())
+
+        return True
+
+    def convert_active_to_ai_readable(self):
+        """Return the kit.txt prompt with the active loop's hits inserted."""
+        if self.active == -1:
+            return ""
+
+        try:
+            with open("prompts/kit.txt", "r", encoding="utf-8") as f:
+                template = f.read()
+        except FileNotFoundError:
+            return ""
+
+        names = []
+        if self.active < len(self.topic_descriptions):
+            names = self.topic_descriptions[self.active]
+
+        hits = []
+        for action_time, finger_index in sorted(self.loops.get(self.active, []), key=lambda x: x[0]):
+            name = names[finger_index] if finger_index < len(names) else f"Finger {finger_index}"
+            beat_ts = (action_time / self.beat_length) % self.settings.beats_per_loop
+            hits.append(f"{name}: {beat_ts:.3f}")
+
+        hits_block = "\n".join(hits) if hits else "No hits recorded."
+
+        vibes = [
+            "chill",
+            "upbeat",
+            "hip-hop",
+            "jazzy",
+            "rock",
+        ]
+
+        return template.replace("$$$HITS$$$", hits_block).replace("$$VIBE$$", vibes[random.randint(0, len(vibes)-1)])
+
+    def convert_from_ai(self, ai_response: str, active):
+        print(f"AI response:\n{ai_response}")
+
+        """Parse AI refined loop XML and replace the active loop. Returns True on success."""
+        if active == -1:
+            return False
+
+        if active < len(self.topic_descriptions):
+            names = self.topic_descriptions[active]
+        else:
+            names = [f"Finger {i}" for i in range(5)]
+
+        name_to_finger = {n.lower(): i for i, n in enumerate(names)}
+
+        notes = re.findall(r"<note>(.*?)</note>", ai_response, flags=re.DOTALL | re.IGNORECASE)
+
+        new_hits = []
+        for note in notes:
+            name_match = re.search(r"<name>\s*(.*?)\s*</name>", note, flags=re.DOTALL | re.IGNORECASE)
+            if not name_match:
+                continue
+
+            name = name_match.group(1).strip().lower()
+            if name not in name_to_finger:
+                continue
+
+            finger_index = name_to_finger[name]
+
+            for ts_str in re.findall(r"<timestamp>\s*([\d.]+)\s*</timestamp>", note, flags=re.DOTALL | re.IGNORECASE):
+                try:
+                    beat_val = float(ts_str)
+                except ValueError:
+                    continue
+
+                beat_val = beat_val % self.settings.beats_per_loop
+                time_sec = beat_val * self.beat_length
+                new_hits.append((time_sec, finger_index))
+
+        if not new_hits:
+            return False
+
+        new_hits.sort(key=lambda x: x[0])
+        self.loops[active] = new_hits
+        return True

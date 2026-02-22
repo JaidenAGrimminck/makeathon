@@ -24,8 +24,8 @@ class Voice:
     def ask(self, text):
         # just a basic example of using Gemini to generate a text response (can be used for chatbot or to generate prompts for TTS)
         response = self.client.models.generate_content(
-            model="gemini-2.5-flash-preview",
-            contents=f"Answer the following question in a concise and clear manner: {text}",
+            model="gemini-2.5-flash-lite",
+            contents=f"Answer the following in a concise and clear manner: {text}",
             config=types.GenerateContentConfig(
                 response_modalities=["TEXT"],
             ),

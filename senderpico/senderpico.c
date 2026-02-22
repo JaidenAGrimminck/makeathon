@@ -8,14 +8,14 @@
 #define SECOND_PIN 27
 #define THIRD_PIN 28
 
-#define SIDE 0
+#define SIDE 1
 
 int main() {
     stdio_init_all();          // initializes any linked stdio backends :contentReference[oaicite:3]{index=3}
     sleep_ms(1500);            // helps during bring-up / first plug-in
 
     int thresholds[3] = {
-        130,
+        170,
         160,
         150
     };
@@ -53,7 +53,7 @@ int main() {
         count++;
 
         if (to_us_since_boot(get_absolute_time()) - usSinceBoot > 100000 / 2) {
-            printf("%d Values: %d, %d, %d\n", SIDE, averages[0] / count, averages[1] / count, averages[2] / count);
+            printf("%d Values: %d, %d, %d\n", SIDE, averages[1] / count, averages[0] / count, averages[2] / count);
             usSinceBoot = to_us_since_boot(get_absolute_time());
 
             averages[0] = 0;
