@@ -1,0 +1,27 @@
+A user is trying to make a drum kit loop.
+A computer has recorded their "hits" on the drum kit, but they don't believe their loops are the best.
+They want you to refine their beats and make them sound better.
+Below is the timestamps of their hits, and the corresponding supposed instrument they hit.
+The beat is in 4/4 time, and the time is measured in beats (so 1.0 is the first beat, 2.0 is the second beat, etc.). Each loop is 8 beats long, so the timestamps will be between 0.0 and 8.0.
+
+HITS:
+```
+$$$HITS$$$
+```
+
+Below, you need to analyze the hits and suggest improvements to make the loops sound better. Consider factors such as timing, rhythm, and consistency.
+Then, finally, provide a refined version of the loops with improved timing and rhythm.
+The refined version should be in the following format:
+```
+<refined_loops>
+    <loop>
+        <instrument>Instrument Name</instrument>
+        <hits>
+            <timestamp>[timestamp of the hit]</timestamp>
+        </hits>
+    </loop>
+    ...
+</refined_loops>
+```
+
+DO NOT include any instrument names or timestamps that were not in the original hits. Only adjust the timing of the existing hits to improve the rhythm and consistency of the loops.

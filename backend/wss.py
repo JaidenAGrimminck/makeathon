@@ -1,14 +1,38 @@
 import asyncio
 import inspect
+import threading
 from websockets.asyncio.server import serve
 from websockets.exceptions import ConnectionClosed
+import ip
 
 class Server:
     def __init__(self, host="10.48.83.217", port=8765):
-        self.host = host
+        self.host = ip.get_local_ip_robust() or host
         self.port = port
         self.callbacks = []
         self.connected_clients = set()
+
+    async def _send_client(self, ws, payload: bytes):
+        """Send to a single client and prune dead connections."""
+        try:
+            await ws.send(payload)
+        except ConnectionClosed:
+            self.connected_clients.discard(ws)
+
+    def broadcast(self, payload: bytes | bytearray | str):
+        """Send a message to every client.
+
+        - Coerce bytearray → bytes so the browser gets a binary frame with the
+          expected length (avoids empty Blob on the frontend).
+        - Fire-and-forget using create_task so callers can stay sync.
+        """
+
+        # Normalise the payload type for websockets
+        if isinstance(payload, bytearray):
+            payload = bytes(payload)
+
+        for ws in list(self.connected_clients):
+            asyncio.create_task(self._send_client(ws, payload))
 
     def onMessage(self, callback):
         # callback can be sync or async; we'll handle both
@@ -18,7 +42,8 @@ class Server:
         for cb in list(self.callbacks):
             try:
                 if inspect.iscoroutinefunction(cb):
-                    await cb(message, websocket)
+                    # thread it
+                    threading.Thread(target=asyncio.run, args=(cb(message, websocket),)).start()
                 else:
                     cb(message, websocket)
             except Exception as e:
